@@ -20,14 +20,30 @@ type instruction struct {
 
 func main() {
 	input := utils.ReadInput("day01")
-	input_lines := utils.Lines(input)
-	instructions := parseInstructions(input_lines)
+	inputLines := utils.Lines(input)
+	instructions, err := parseInstructions(inputLines)
 
-	fmt.Println("Part1 Code - ", part1(instructions))
-	fmt.Println("Part2 Code - ", part2(instructions))
+	if err != nil {
+		log.Fatalf("parseInstructions failed: %v", err)
+	}
+
+	part1Code, err := part1(instructions)
+
+	if err != nil {
+		log.Fatalf("part1 failed: %v", err)
+	}
+
+	part2Code, err := part2(instructions)
+
+	if err != nil {
+		log.Fatalf("part2 failed: %v", err)
+	}
+
+	fmt.Println("part1 code - ", part1Code)
+	fmt.Println("part2 code - ", part2Code)
 }
 
-func parseInstructions(lines []string) []instruction {
+func parseInstructions(lines []string) ([]instruction, error) {
 	instructions := make([]instruction, 0, len(lines))
 
 	for _, line := range lines {
@@ -39,7 +55,7 @@ func parseInstructions(lines []string) []instruction {
 		steps, err := strconv.Atoi(line[1:])
 
 		if err != nil {
-			log.Fatalf("Invalid step value in %q: %v", line, err)
+			return nil, fmt.Errorf("invalid step value in %q: %v", line, err)
 		}
 
 		instructions = append(instructions, instruction{
@@ -48,10 +64,10 @@ func parseInstructions(lines []string) []instruction {
 		})
 	}
 
-	return instructions
+	return instructions, nil
 }
 
-func part1(instructions []instruction) int {
+func part1(instructions []instruction) (int, error) {
 	currentValue := startValue
 	code := 0
 
@@ -62,7 +78,7 @@ func part1(instructions []instruction) int {
 		case 'L':
 			currentValue = (currentValue - inst.steps) % maxPoint
 		default:
-			log.Fatalf("Unknown direction: %q", inst.dir)
+			return 0, fmt.Errorf("unknown direction: %q", inst.dir)
 		}
 
 		if currentValue == 0 {
@@ -70,16 +86,21 @@ func part1(instructions []instruction) int {
 		}
 	}
 
-	return code
+	return code, nil
 }
 
-func part2(instructions []instruction) int {
+func part2(instructions []instruction) (int, error) {
 	currentValue := startValue
 	code := 0
+	var err error
 
 	for _, inst := range instructions {
 		for i := 0; i < inst.steps; i++ {
-			currentValue = stepOnce(currentValue, inst.dir, maxPoint)
+			currentValue, err = stepOnce(currentValue, inst.dir, maxPoint)
+
+			if err != nil {
+				return 0, fmt.Errorf("stepOnce failed: %v", err)
+			}
 
 			if currentValue == 0 {
 				code++
@@ -87,10 +108,10 @@ func part2(instructions []instruction) int {
 		}
 	}
 
-	return code
+	return code, nil
 }
 
-func stepOnce(current int, dir byte, maxValue int) int {
+func stepOnce(current int, dir byte, maxValue int) (int, error) {
 	switch dir {
 	case 'R':
 		current++
@@ -104,8 +125,8 @@ func stepOnce(current int, dir byte, maxValue int) int {
 			current = maxValue - 1
 		}
 	default:
-		log.Fatalf("Unknown direction: %q", dir)
+		return 0, fmt.Errorf("unknown direction: %q", dir)
 	}
 
-	return current
+	return current, nil
 }
